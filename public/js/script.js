@@ -64,45 +64,46 @@ function mouseMoveFunction(e, Xo, Yo){
     let containerW = container.offsetWidth;
     let containerH = container.offsetHeight;
     select(e);
-    if(e.pageY < Yo && e.pageX < Xo) {
-        $("#select").css({top: e.pageY,
-                          left: e.pageX,
-                          right: containerW - Xo,
-                          bottom: containerH - Yo});   
-    } else if(e.pageY < Yo) {
-        $("#select").css({top: e.pageY,
-                          left: Xo,
-                          right: containerW - e.pageX,
-                          bottom: containerH - Yo});   
-    } else if(e.pageX < Xo) {
-        $("#select").css({top: Yo,
-                          left: e.pageX,
-                          right: containerW - Xo,
-                          bottom: containerH - e.pageY});   
-    } else {
-        $("#select").css({top: Yo,
-                          left: Xo,
-                          right: containerW - e.pageX,
-                          bottom: containerH - e.pageY});   
-    } 
+    let selectBox = qs('#select');
+    if(e.pageY < Yo) {
+        selectBox.style.top = e.pageY + "px";
+        selectBox.style.bottom = containerH - Yo + "px";
+        if(e.pageX > Xo) {
+            selectBox.style.left = Xo + "px";
+            selectBox.style.right = containerW - e.pageX + "px";
+        } else {
+            selectBox.style.left = e.pageX + "px";
+            selectBox.style.right = containerW - Xo + "px";
+        }
+    } else  {
+        selectBox.style.top = Yo + "px";
+        selectBox.style.bottom = containerH - e.pageY + "px";
+        if(e.pageX < Xo){
+            selectBox.style.left = e.pageX + "px";
+            selectBox.style.right = containerW - Xo + "px";
+        } else {
+            selectBox.style.left = Xo + "px";
+            selectBox.style.right = containerW - e.pageX + "px";
+        }
+    }
 }
 
 
 $(function(){
-    let items = document.querySelectorAll(".item");
+    let items = qsa(".item");
     for (var i = 0; i < items.length; i++) {
         items[i].id = "item-" + i;
         items[i].addEventListener('click', function(e) {
             this.classList.add("selected");
-            selected = document.querySelectorAll('.selected');
+            selected = qs('.selected');
         });
         var x = document.createElement("DIV");  
         x.id = "ph-"+i;
         x.classList.add("placeholder");
-        document.getElementsByClassName("row")[0].appendChild(x);
+        qs(".row").appendChild(x);
         dragElement(items[i]);
     }
-    pholders = document.querySelectorAll('.placeholder');
+    let pholders = qsa('.placeholder');
     for (var i = 0; i < items.length; i++) {
         let rect = pholders[i].getBoundingClientRect();
         items[i].style.top = rect.y + "px";
@@ -129,10 +130,10 @@ container.addEventListener("mousedown", function(e){
 
 container.addEventListener("mouseup", function(e){
     container.onmousemove = null;
-    let child = document.getElementById("select");
+    let child = qs('#select');
     while(child){
         container.removeChild(child);
-        child = document.getElementById("select");
+        child = qs("select");
     }
 });
 
@@ -142,9 +143,9 @@ function showTrash(){
         i.id = "trash";
         i.classList.add("trash","fas", "fa-trash-alt");
         document.querySelector(".container").appendChild(i);
-        setTimeout(function(){
-            TweenLite.to(i, 1, {opacity: 1})
-        }, 100)
+        // let svg = document.querySelector("svg");
+        //     TweenLite.to(svg, 1, {opacity: 1})
+
     }
 }
 
@@ -156,7 +157,6 @@ function dragElement(elmnt) {
         // get the mouse cursor position at startup:
         pos3 = e.clientX;
         pos4 = e.clientY;
-        console.log("start drag")
         if(elmnt.classList.contains("selected")){
             document.onmousemove = elementDrag;
         } 
@@ -164,6 +164,7 @@ function dragElement(elmnt) {
     }
 
     function elementDrag(e) {
+        let selected = qsa(".selected");
         showTrash();
         e = e || window.event;
         // calculate the new cursor position:
@@ -191,12 +192,8 @@ function dragElement(elmnt) {
 
     function closeDragElement(e){
         /* stop moving when mouse button is released:*/
-        let selected = document.querySelectorAll(".selected");
         document.onmouseup = null;
         document.onmousemove = null;
-        // for (var i = 0; i < selected.length; i++) {
-        //     selected[i].classList.remove("selected");
-        // }
         snapToPlace(elmnt);
     }
 }
@@ -220,13 +217,6 @@ function snapToPlace(el){
     let pRect = pholder.getBoundingClientRect();
     TweenLite.to(el, .4, {top:wy+ pRect.y+"px", left:wx +pRect.x+"px"});
 
-}
-
-
-function distance(p1, p2){
-    let dx = p2[0] - p1[0];
-    let dy = p2[1] - p1[1];
-    return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
 }
 
 const addbutton = document.querySelector(".add-button");
@@ -271,7 +261,6 @@ var observer = new MutationObserver(function(mutations) {
             if(target.className === "row"){
                 let node = mutation.addedNodes[0];
                 if(node.classList.contains("item")){
-                    console.log("added item")
                     initItem(node);
                 } 
             }
