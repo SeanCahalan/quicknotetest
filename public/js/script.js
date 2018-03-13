@@ -1,3 +1,5 @@
+var itemContext = new Object();
+
 const container = document.getElementsByClassName("container")[0];
 function mouseDownFunction(e, Xo, Yo){
     let items = document.querySelectorAll(".item");
@@ -8,15 +10,17 @@ function mouseDownFunction(e, Xo, Yo){
             }
         }
         if(e.shiftKey){
-            let end = Array.prototype.indexOf.call(items, e.target);
+            let array = Array.prototype.slice.call(items, 0);
+            let sorted = sortByPlace(array);
+            let end = sorted.indexOf(e.target);
             let start = 0;
-            for (var i = 0; i < items.length; i++) {
-                if(items[i].classList.contains("selected")){
+            for (var i = 0; i < end; i++) {
+                if(sorted[i].classList.contains("selected")){
                     start = i;
                 }
             }
             for (var i = start; i <= end; i++) {
-                items[i].classList.add("selected");
+                sorted[i].classList.add("selected");
             }
         }
     }
@@ -24,11 +28,7 @@ function mouseDownFunction(e, Xo, Yo){
     var x = document.createElement("DIV");  
     x.id = "select";
     container.appendChild(x);
-    $(".select").css({width: "auto",
-                    height: "auto"});
     TweenLite.to(x, 1, {opacity: 1})
-    
-    
 }
 
 function insideRect(item, box){
@@ -107,11 +107,19 @@ $(function(){
     for (var i = 0; i < items.length; i++) {
         let rect = pholders[i].getBoundingClientRect();
         items[i].style.top = rect.y + "px";
-        items[i].style.left = rect.x + "px";  
+        items[i].style.left = rect.x + "px";
+        itemContext[items[i].id] = pholders[i];
     }
-    
-
 })
+
+window.addEventListener('resize', function(){
+    let items = qsa(".item");
+    for (var i = 0; i < items.length; i++) {
+        let rect = itemContext[items[i].id].getBoundingClientRect();
+        items[i].style.top = rect.y + "px";
+        items[i].style.left = rect.x + "px";
+    }
+}, true);
 
 
 container.addEventListener("mousedown", function(e){
@@ -150,6 +158,7 @@ function showTrash(){
 }
 
 function dragElement(elmnt) {
+    var swapTarget = null;
     var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     elmnt.onmousedown = dragMouseDown;
     function dragMouseDown(e) {
@@ -165,6 +174,9 @@ function dragElement(elmnt) {
 
     function elementDrag(e) {
         let selected = qsa(".selected");
+        let array = Array.prototype.slice.call(selected, 0);
+        let sorted = sortByPlace(array);
+
         showTrash();
         e = e || window.event;
         // calculate the new cursor position:
@@ -176,8 +188,8 @@ function dragElement(elmnt) {
         let y = (elmnt.offsetTop - pos2) + "px";
         let x = (elmnt.offsetLeft - pos1) + "px";
         TweenLite.to(elmnt, 0, {top:y, left:x});
-        const elIndex = Array.prototype.indexOf.call(selected, elmnt);
-        selected.forEach(function(sibling, index){
+        const elIndex = sorted.indexOf(elmnt);
+        sorted.forEach(function(sibling, index){
             
             var interval = Math.floor(index/5)-Math.floor(elIndex/5);
             y = (elmnt.offsetTop - pos2 + 220*interval) + "px";
@@ -188,35 +200,72 @@ function dragElement(elmnt) {
                 TweenLite.to(sibling, 0.3, {top:y, left:x});
             }
         })
+        if(selected.length === 1){
+            let items = qsa('.item');
+            let closest = itemContext[ elmnt ];
+            let elRect = elmnt.getBoundingClientRect();
+            let p1 = [elRect.x + elRect.width/2, elRect.y+elRect.height/2];
+            let d = 10000;
+            for(let i = 0; i<items.length; i++){
+                let rect = itemContext[items[i].id].getBoundingClientRect();
+                let p2 = [rect.x + rect.width/2, rect.y+rect.height/2];
+                if(d > distance(p1, p2)){
+                    d = distance(p1, p2)
+                    closest = itemContext[items[i].id];
+                    closestElement = items[i];
+                }
+            }
+            if(closest !== itemContext[elmnt.id]){
+                swapTarget = closestElement;
+            }
+        }
+
     }
 
     function closeDragElement(e){
         /* stop moving when mouse button is released:*/
         document.onmouseup = null;
         document.onmousemove = null;
-        snapToPlace(elmnt);
+        let selected = qsa(".selected");
+        if(selected.length > 1){
+            selected.forEach(function(item){
+                snapToPlace(item);
+            })
+        } else if (swapTarget) {
+            swapPlaces(elmnt, swapTarget);
+            swapTarget = null;
+        } else {
+            snapToPlace(elmnt);
+        }
     }
 }
 
-function snapToPlace(el){
+function snapToPlace(el, delay){
     let wx = window.scrollX;
     let wy = window.scrollY;
-    let pholders = document.querySelectorAll(".placeholder");
-    let elRect = el.getBoundingClientRect();
-    let p1 = [elRect.x + elRect.width/2, elRect.y+elRect.height/2];
-    let pholder = pholders[0];
-    let d = 10000;
-    pholders.forEach(function(p){
-        let rect = p.getBoundingClientRect();
-        let p2 = [rect.x + rect.width/2, rect.y+rect.height/2];
-        if(d > distance(p1, p2)){
-           d = distance(p1, p2)
-            pholder = p;
-        }
-    })
-    let pRect = pholder.getBoundingClientRect();
-    TweenLite.to(el, .4, {top:wy+ pRect.y+"px", left:wx +pRect.x+"px"});
 
+    let pholder = itemContext[el.id];
+    let d = Number(pholder.id.substring(3))*0.05;
+    d = 0;
+    let pRect = pholder.getBoundingClientRect();
+    TweenLite.to(el, .4, {delay: d, top:wy+ pRect.y+"px", left:wx +pRect.x+"px"});
+}
+
+function swapPlaces(item, target){
+    console.log("attempt swap")
+    let wx = window.scrollX;
+    let wy = window.scrollY;
+
+    let itemPlace = itemContext[item.id];
+
+    let targetPlace = itemContext[target.id];
+    let tRect = targetPlace.getBoundingClientRect();
+    TweenLite.to(item, .4, {top:wy+ tRect.y+"px", left:wx +tRect.x+"px"});
+    itemContext[item.id] = targetPlace;
+
+    let iRect = itemPlace.getBoundingClientRect();
+    TweenLite.to(target, .4, {top:wy+ iRect.y+"px", left:wx +iRect.x+"px"});
+    itemContext[target.id] = itemPlace;
 }
 
 const addbutton = document.querySelector(".add-button");
@@ -248,6 +297,7 @@ function initItem(item){
     item.style.left = rect.x + "px";  
 
     dragElement(item);
+    itemContext[item.id] = x;
     
 }
 
