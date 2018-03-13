@@ -145,17 +145,22 @@ container.addEventListener("mouseup", function(e){
     }
 });
 
-function showTrash(){
-    if(!document.querySelector("#trash")){
-        var i = document.createElement("I");  
-        i.id = "trash";
-        i.classList.add("trash","fas", "fa-trash-alt");
-        document.querySelector(".container").appendChild(i);
-        // let svg = document.querySelector("svg");
-        //     TweenLite.to(svg, 1, {opacity: 1})
 
-    }
+let trash = qs(".trash");
+function showTrash(){
+    if(!trash.classList.contains('active')){
+        trash.classList.add('active');
+        trash.style.left = window.innerWidth/2 - trash.getBoundingClientRect().width/2 + "px";
+        TweenLite.to(trash, 1, {opacity: 1})
+    }  
 }
+function hideTrash(){
+    TweenLite.to(trash, 1, {opacity: 0})
+    setTimeout(function(){
+        trash.classList.remove('active');
+    },1000)   
+}
+
 
 function dragElement(elmnt) {
     var swapTarget = null;
@@ -192,12 +197,14 @@ function dragElement(elmnt) {
         sorted.forEach(function(sibling, index){
             
             var interval = Math.floor(index/5)-Math.floor(elIndex/5);
+            var dif = (index+5)%5-elIndex%5;
             y = (elmnt.offsetTop - pos2 + 220*interval) + "px";
-            x = (elmnt.offsetLeft - pos1 + 140*((index+5)%5-elIndex%5)) + "px";
+            x = (elmnt.offsetLeft - pos1 + 140*dif) + "px";
+            var absDif = Math.abs(dif);
             if(index < elIndex){
-                TweenLite.to(sibling, 0.3, {top:y, left:x});
+                TweenLite.to(sibling, 0.3*(1+0.3*absDif), {top:y, left:x});
             } else if(index > elIndex){
-                TweenLite.to(sibling, 0.3, {top:y, left:x});
+                TweenLite.to(sibling, 0.3*(1+0.3*absDif), {top:y, left:x});
             }
         })
         if(selected.length === 1){
@@ -218,25 +225,61 @@ function dragElement(elmnt) {
             
             if(closest !== itemContext[elmnt.id]){
                 let ceRect = closestElement.getBoundingClientRect();
+               
                 if(insideRect(ceRect, elRect)){
                     swapTarget = closestElement;
+                    qsa('.ready-swap').forEach(function(x){
+                        x.classList.remove('ready-swap');
+                    })
                     closestElement.classList.add('ready-swap');
                 } else {
-                    closestElement.classList.remove('ready-swap');
+                    qsa('.ready-swap').forEach(function(x){
+                        x.classList.remove('ready-swap');
+                    })
                     swapTarget = null;
-                }
-                
+                }   
+            } else {
+                swapTarget = null;
+                qsa('.ready-swap').forEach(function(x){
+                    x.classList.remove('ready-swap');
+                })
             }
         }
-
+        if(insideRect(trash.getBoundingClientRect(), elmnt.getBoundingClientRect())){
+            sorted.forEach(function(item, index){
+                var dif = (index+5)%5-elIndex%5;
+                x = (elmnt.offsetLeft - pos1 + 110*dif) + "px";
+                TweenLite.to(item, 0.3, {opacity: 0.8, scale: 0.8, left: x});
+           
+            })
+        } else {
+            sorted.forEach(function(item, index){
+                TweenLite.to(item, 0.3, {opacity: 1, scale:1});
+           
+            })
+        }
     }
 
     function closeDragElement(e){
+        hideTrash();
         /* stop moving when mouse button is released:*/
         document.onmouseup = null;
         document.onmousemove = null;
         let selected = qsa(".selected");
-        if(selected.length > 1){
+        if(insideRect(trash.getBoundingClientRect(), elmnt.getBoundingClientRect())){
+            let wx = window.scrollX;
+            let wy = window.scrollY;
+            let t = trash.getBoundingClientRect();
+            let tx = t.x + t.width/2 + "px";
+            let ty = t.y + t.height/2 + "px";
+            selected.forEach(function(item){
+                TweenLite.to(item, 0, {scale: 0.01});
+            })
+            selected.forEach(function(item){
+                TweenLite.to(item, 0.3, {top: ty, left: tx});
+            })
+            
+        } else if(selected.length > 1){
             let array = Array.prototype.slice.call(selected, 0);
             let sorted = sortByPlace(array);
             sorted.forEach(function(item, index){
@@ -246,23 +289,24 @@ function dragElement(elmnt) {
             swapPlaces(elmnt, swapTarget);
             swapTarget = null;
         } else {
-            snapToPlace(elmnt);
+            snapToPlace(elmnt, 0);
         }
+        qsa('.ready-swap').forEach(function(x){
+            x.classList.remove('ready-swap');
+        })
     }
 }
+
 
 function snapToPlace(el, delay){
     let wx = window.scrollX;
     let wy = window.scrollY;
-
     let pholder = itemContext[el.id];
-  
     let pRect = pholder.getBoundingClientRect();
     TweenLite.to(el, .4, {delay: delay, top:wy+ pRect.y+"px", left:wx +pRect.x+"px"});
 }
 
 function swapPlaces(item, target){
-    console.log("attempt swap")
     let wx = window.scrollX;
     let wy = window.scrollY;
 
@@ -309,6 +353,10 @@ function initItem(item){
     dragElement(item);
     itemContext[item.id] = x;
     
+}
+
+function deleteItem(item){
+
 }
 
 
