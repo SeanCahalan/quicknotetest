@@ -42,7 +42,7 @@ function overlap(item){
     var select = document.getElementById("select");
     var selRect = select.getBoundingClientRect();
     if(insideRect(domRect, selRect)){
-        return true;
+        return true;    
     }
     return false;
 }
@@ -215,8 +215,17 @@ function dragElement(elmnt) {
                     closestElement = items[i];
                 }
             }
+            
             if(closest !== itemContext[elmnt.id]){
-                swapTarget = closestElement;
+                let ceRect = closestElement.getBoundingClientRect();
+                if(insideRect(ceRect, elRect)){
+                    swapTarget = closestElement;
+                    closestElement.classList.add('ready-swap');
+                } else {
+                    closestElement.classList.remove('ready-swap');
+                    swapTarget = null;
+                }
+                
             }
         }
 
@@ -228,8 +237,10 @@ function dragElement(elmnt) {
         document.onmousemove = null;
         let selected = qsa(".selected");
         if(selected.length > 1){
-            selected.forEach(function(item){
-                snapToPlace(item);
+            let array = Array.prototype.slice.call(selected, 0);
+            let sorted = sortByPlace(array);
+            sorted.forEach(function(item, index){
+                snapToPlace(item, index*0.035);
             })
         } else if (swapTarget) {
             swapPlaces(elmnt, swapTarget);
@@ -245,10 +256,9 @@ function snapToPlace(el, delay){
     let wy = window.scrollY;
 
     let pholder = itemContext[el.id];
-    let d = Number(pholder.id.substring(3))*0.05;
-    d = 0;
+  
     let pRect = pholder.getBoundingClientRect();
-    TweenLite.to(el, .4, {delay: d, top:wy+ pRect.y+"px", left:wx +pRect.x+"px"});
+    TweenLite.to(el, .4, {delay: delay, top:wy+ pRect.y+"px", left:wx +pRect.x+"px"});
 }
 
 function swapPlaces(item, target){

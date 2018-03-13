@@ -14,12 +14,8 @@ var distance = function(p1, p2){
 
 var sortByPlace = function(array){
     return array.sort(function(a, b){
-        if(itemContext[a.id].id > itemContext[b.id].id){
-            return 1;
-        } else if (itemContext[a.id].id > itemContext[b.id].id){
-            return -1;
-        } else {
-            return 0;
-        }
+        let x = Number(itemContext[a.id].id.substring(3));
+        let y = Number(itemContext[b.id].id.substring(3));
+        return x - y;
     });
 }
