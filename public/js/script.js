@@ -10,15 +10,17 @@ function mouseDownFunction(e, Xo, Yo){
             }
         }
         if(e.shiftKey){
-            let end = Array.prototype.indexOf.call(items, e.target);
+            let array = Array.prototype.slice.call(items, 0);
+            let sorted = sortByPlace(array);
+            let end = sorted.indexOf(e.target);
             let start = 0;
-            for (var i = 0; i < items.length; i++) {
-                if(items[i].classList.contains("selected")){
+            for (var i = 0; i < end; i++) {
+                if(sorted[i].classList.contains("selected")){
                     start = i;
                 }
             }
             for (var i = start; i <= end; i++) {
-                items[i].classList.add("selected");
+                sorted[i].classList.add("selected");
             }
         }
     }
@@ -173,15 +175,7 @@ function dragElement(elmnt) {
     function elementDrag(e) {
         let selected = qsa(".selected");
         let array = Array.prototype.slice.call(selected, 0);
-        let sorted = array.sort(function(a, b){
-            if(itemContext[a.id].id > itemContext[b.id].id){
-                return 1;
-            } else if (itemContext[a.id].id > itemContext[b.id].id){
-                return -1;
-            } else {
-                return 0;
-            }
-        });
+        let sorted = sortByPlace(array);
 
         showTrash();
         e = e || window.event;
