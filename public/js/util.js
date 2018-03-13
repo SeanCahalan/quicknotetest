@@ -19,3 +19,4 @@ var sortByPlace = function(array){
         return x - y;
     });
 }
+
