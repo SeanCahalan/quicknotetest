@@ -20,3 +20,16 @@ var sortByPlace = function(array){
     });
 }
 
+var firstMissingNumber = function(array){
+    let boolflag = new Array(array.length);
+    for(let i = 0, len = array.length; i < len; i++){
+        if(array[i] < len){
+            boolflag[array[i]] = 1;
+        }
+    }
+    for(let i = 0, len = boolflag.length; i < len; i++){
+        if(!boolflag[i])
+            return i;
+    }
+    return array.length;
+}

@@ -2,7 +2,7 @@ var itemContext = new Object();
 
 const container = document.getElementsByClassName("container")[0];
 function mouseDownFunction(e, Xo, Yo){
-    let items = document.querySelectorAll(".item");
+    let items = qsa(".item");
     if(!e.target.classList.contains("selected")){
         if(!e.ctrlKey && !e.shiftKey){
             for (var i = 0; i < items.length; i++) {
@@ -24,6 +24,10 @@ function mouseDownFunction(e, Xo, Yo){
             }
         }
     }
+    if(e.target.classList.contains('item')){
+        e.target.classList.add("selected");
+    } 
+    
 
     var x = document.createElement("DIV");  
     x.id = "select";
@@ -47,11 +51,10 @@ function overlap(item){
     return false;
 }
 function select(e){
-    let items = document.getElementsByClassName("item");
+    let items = qsa(".item");
     for(let i = 0, len = items.length; i < len; i++){
         if(overlap(items[i])){
             items[i].classList.add("selected"); 
-            selected = document.querySelectorAll('.selected');
         } else {
             if(!e.ctrlKey){
                 items[i].classList.remove("selected");
@@ -88,20 +91,19 @@ function mouseMoveFunction(e, Xo, Yo){
     }
 }
 
-
-$(function(){
+document.addEventListener("DOMContentLoaded", function(event) { 
     let items = qsa(".item");
     for (var i = 0; i < items.length; i++) {
         items[i].id = "item-" + i;
-        items[i].addEventListener('click', function(e) {
+        items[i].addEventListener('click', function(e) { 
             this.classList.add("selected");
-            selected = qs('.selected');
         });
         var x = document.createElement("DIV");  
         x.id = "ph-"+i;
         x.classList.add("placeholder");
         qs(".row").appendChild(x);
         dragElement(items[i]);
+        //resizeElement(items[i]);
     }
     let pholders = qsa('.placeholder');
     for (var i = 0; i < items.length; i++) {
@@ -110,7 +112,7 @@ $(function(){
         items[i].style.left = rect.x + "px";
         itemContext[items[i].id] = pholders[i];
     }
-})
+});
 
 window.addEventListener('resize', function(){
     let items = qsa(".item");
@@ -127,9 +129,10 @@ container.addEventListener("mousedown", function(e){
         mouseMoveFunction(e, Xo, Yo);
     }
     if ($(event.target).closest('.item').length) {
-        if(e.target.classList.contains('selected')){
+        // if(e.target.classList.contains('selected')){
+            
             container.onmousemove = null;
-        }
+        // }
     } 
     let Xo = e.pageX;
     let Yo = e.pageY;  
@@ -141,7 +144,7 @@ container.addEventListener("mouseup", function(e){
     let child = qs('#select');
     while(child){
         container.removeChild(child);
-        child = qs("select");
+        child = qs("#select");
     }
 });
 
@@ -161,25 +164,27 @@ function hideTrash(){
     },1000)   
 }
 
-
 function dragElement(elmnt) {
     var swapTarget = null;
+    var deleteSelected = false;
     var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     elmnt.onmousedown = dragMouseDown;
     function dragMouseDown(e) {
         e = e || window.event;
+       
         // get the mouse cursor position at startup:
         pos3 = e.clientX;
         pos4 = e.clientY;
-        if(elmnt.classList.contains("selected")){
-            document.onmousemove = elementDrag;
-        } 
+
+        document.onmousemove = elementDrag;
+       
         document.onmouseup = closeDragElement;
     }
 
     function elementDrag(e) {
         let selected = qsa(".selected");
         let array = Array.prototype.slice.call(selected, 0);
+        console.log(array)
         let sorted = sortByPlace(array);
 
         showTrash();
@@ -246,6 +251,7 @@ function dragElement(elmnt) {
             }
         }
         if(insideRect(trash.getBoundingClientRect(), elmnt.getBoundingClientRect())){
+            deleteSelected = true;
             sorted.forEach(function(item, index){
                 var dif = (index+5)%5-elIndex%5;
                 x = (elmnt.offsetLeft - pos1 + 110*dif) + "px";
@@ -253,6 +259,7 @@ function dragElement(elmnt) {
            
             })
         } else {
+            deleteSelected = false;
             sorted.forEach(function(item, index){
                 TweenLite.to(item, 0.3, {opacity: 1, scale:1});
            
@@ -266,7 +273,7 @@ function dragElement(elmnt) {
         document.onmouseup = null;
         document.onmousemove = null;
         let selected = qsa(".selected");
-        if(insideRect(trash.getBoundingClientRect(), elmnt.getBoundingClientRect())){
+        if(deleteSelected){
             let wx = window.scrollX;
             let wy = window.scrollY;
             let t = trash.getBoundingClientRect();
@@ -278,22 +285,31 @@ function dragElement(elmnt) {
             selected.forEach(function(item){
                 TweenLite.to(item, 0.3, {top: ty, left: tx});
             })
+            setTimeout(function(){
+                selected.forEach(function(item){
+                    deleteItem(item);
+                })
+            }, 300)
             
         } else if(selected.length > 1){
             let array = Array.prototype.slice.call(selected, 0);
+            console.log(array)
             let sorted = sortByPlace(array);
             sorted.forEach(function(item, index){
                 snapToPlace(item, index*0.035);
             })
         } else if (swapTarget) {
+     
             swapPlaces(elmnt, swapTarget);
             swapTarget = null;
         } else {
+    
             snapToPlace(elmnt, 0);
         }
         qsa('.ready-swap').forEach(function(x){
             x.classList.remove('ready-swap');
         })
+        
     }
 }
 
@@ -310,41 +326,66 @@ function swapPlaces(item, target){
     let wx = window.scrollX;
     let wy = window.scrollY;
 
+    let itemId = item.id;
     let itemPlace = itemContext[item.id];
 
     let targetPlace = itemContext[target.id];
     let tRect = targetPlace.getBoundingClientRect();
     TweenLite.to(item, .4, {top:wy+ tRect.y+"px", left:wx +tRect.x+"px"});
-    itemContext[item.id] = targetPlace;
+    item.id = target.id;
+    // itemContext[item.id] = targetPlace;
 
     let iRect = itemPlace.getBoundingClientRect();
     TweenLite.to(target, .4, {top:wy+ iRect.y+"px", left:wx +iRect.x+"px"});
-    itemContext[target.id] = itemPlace;
+    target.id = itemId;
+    // itemContext[target.id] = itemPlace;
 }
 
 const addbutton = document.querySelector(".add-button");
 addbutton.onclick = function(e){
     let items = document.querySelectorAll(".item");
-    var x = document.createElement("DIV");  
-    x.id = "item-"+items.length;
+    let array = Array.prototype.slice.call(items, 0);
+    itemIds = array.map(function(el){
+        return Number(el.id.substring(5));
+    })
+    let itemId = firstMissingNumber(itemIds);
+    console.log(itemId);
+    var x = document.createElement("DIV"); 
     x.classList.add("item");
-    x.textContent = 'DIV'+items.length;
+    if(itemId == null){
+        itemId = 0;
+    } else if(itemId < 0){
+        itemId = (sorted[0] !== 0) ? 0 : items.length;  
+    }
+
+    x.id = "item-"+itemId;
+    x.textContent = 'DIV'+itemId;
+    
     document.getElementsByClassName("row")[0].appendChild(x);
 }
 
 function initItem(item){
-    let items = document.querySelectorAll(".item");
+    let items = qsa(".item");
+    let pholders = qsa('.placeholder');
 
-  
     item.addEventListener('click', function(e) {
         this.classList.add("selected");
-        selected = document.querySelectorAll('.selected');
     });
 
-    var x = document.createElement("DIV");  
-    x.id = "ph-"+items.length;
-    x.classList.add("placeholder");
-    document.getElementsByClassName("row")[0].appendChild(x);
+    let x = null;
+    pholders.forEach(function(p){
+        if(p.id.substring(3) === item.id.substring(5)){
+            console.log(p.id)
+            x = p;
+        }
+    })
+    if(!x){
+        console.log("new placeholder");
+        x = document.createElement("DIV");  
+        x.id = "ph-"+(items.length-1);
+        x.classList.add("placeholder");
+        document.getElementsByClassName("row")[0].appendChild(x);
+    }
 
     let rect = x.getBoundingClientRect();
     item.style.top = rect.y + "px";
@@ -356,7 +397,8 @@ function initItem(item){
 }
 
 function deleteItem(item){
-
+    delete itemContext[item.id];
+    qs('.row').removeChild(item);
 }
 
 
@@ -367,10 +409,15 @@ var observer = new MutationObserver(function(mutations) {
         if(mutation.type === "childList"){
             let target = mutation.target
             if(target.className === "row"){
-                let node = mutation.addedNodes[0];
-                if(node.classList.contains("item")){
-                    initItem(node);
-                } 
+                if(mutation.removedNodes.length){
+                    console.log("removed node")
+                } else {
+                    let node = mutation.addedNodes[0];
+                    if(node.classList.contains("item")){
+                        initItem(node);
+                    } 
+                }
+                
             }
         }
 
