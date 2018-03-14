@@ -13,22 +13,34 @@ html, body{
     flex-direction: column;
     font-family: Arial, Helvetica, sans-serif;
     .controls{
+        display: flex;
+        padding: 30px 100px;
+        align-items: center;
         .add-button{
             &:hover{
                 cursor: pointer;
                 opacity: .7;
             }
-            
+            margin-right: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 30px 0 0 100px;
             height: 60px;
             width: 128px;
             border-radius: 15px;
             background: white;
             color: #ddd;
             filter: drop-shadow(2px 5px 4px #dddefb);
+        }
+        .re-order{
+            color: #dddefb;
+            line-height: 60px;
+            font-size: 60px;
+            transition: color ease .3s;
+            &:hover{
+                cursor: pointer;
+                color: #8c4cff;
+            }
         }
     }
 
@@ -67,7 +79,7 @@ html, body{
             justify-content: center;
             width: 120px;
             height: 200px;
-           transform-origin: 0 0;
+            // transform-origin: 0 0;
             background: white;
             filter: drop-shadow(0 6px 6px #dddefb);
             transition: color ease .3s, border ease .3s, background ease .3s, transform ease .3s;
