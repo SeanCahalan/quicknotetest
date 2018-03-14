@@ -103,36 +103,38 @@ document.addEventListener("DOMContentLoaded", function(event) {
         x.classList.add("placeholder");
         qs(".row").appendChild(x);
         dragElement(items[i]);
-        //resizeElement(items[i]);
     }
     let pholders = qsa('.placeholder');
-    for (var i = 0; i < items.length; i++) {
-        let rect = pholders[i].getBoundingClientRect();
-        items[i].style.top = rect.y + "px";
-        items[i].style.left = rect.x + "px";
-        itemContext[items[i].id] = pholders[i];
-    }
+    let wx = window.scrollX;
+    let wy = window.scrollY;
+    setTimeout(function(){
+        for (var i = 0; i < items.length; i++) {
+            let rect = pholders[i].getBoundingClientRect();
+            items[i].style.top = wy + rect.y + "px";
+            items[i].style.left = wx + rect.x + "px";
+            itemContext[items[i].id] = pholders[i];
+        }
+    }, 100);
+    
 });
 
 window.addEventListener('resize', function(){
+    let wx = window.scrollX;
+    let wy = window.scrollY;
     let items = qsa(".item");
     for (var i = 0; i < items.length; i++) {
         let rect = itemContext[items[i].id].getBoundingClientRect();
-        items[i].style.top = rect.y + "px";
-        items[i].style.left = rect.x + "px";
+        items[i].style.top = wy + rect.y + "px";
+        items[i].style.left = wx + rect.x + "px";
     }
 }, true);
-
 
 container.addEventListener("mousedown", function(e){
     container.onmousemove = function(e) {
         mouseMoveFunction(e, Xo, Yo);
     }
-    if ($(event.target).closest('.item').length) {
-        // if(e.target.classList.contains('selected')){
-            
-            container.onmousemove = null;
-        // }
+    if ($(event.target).closest('.item').length) {  
+        container.onmousemove = null;
     } 
     let Xo = e.pageX;
     let Yo = e.pageY;  
@@ -184,7 +186,6 @@ function dragElement(elmnt) {
     function elementDrag(e) {
         let selected = qsa(".selected");
         let array = Array.prototype.slice.call(selected, 0);
-        console.log(array)
         let sorted = sortByPlace(array);
 
         showTrash();
@@ -207,9 +208,9 @@ function dragElement(elmnt) {
             x = (elmnt.offsetLeft - pos1 + 140*dif) + "px";
             var absDif = Math.abs(dif);
             if(index < elIndex){
-                TweenLite.to(sibling, 0.3*(1+0.3*absDif), {top:y, left:x});
+                TweenLite.to(sibling, 0.2*(1+0.3*absDif), {top:y, left:x});
             } else if(index > elIndex){
-                TweenLite.to(sibling, 0.3*(1+0.3*absDif), {top:y, left:x});
+                TweenLite.to(sibling, 0.2*(1+0.3*absDif), {top:y, left:x});
             }
         })
         if(selected.length === 1){
@@ -254,8 +255,10 @@ function dragElement(elmnt) {
             deleteSelected = true;
             sorted.forEach(function(item, index){
                 var dif = (index+5)%5-elIndex%5;
-                x = (elmnt.offsetLeft - pos1 + 110*dif) + "px";
-                TweenLite.to(item, 0.3, {opacity: 0.8, scale: 0.8, left: x});
+                var interval = Math.floor(index/5)-Math.floor(elIndex/5);
+                x = (elmnt.offsetLeft - pos1 + 70*dif) + "px";
+                y = (elmnt.offsetTop - pos2 + 110*interval) + "px";
+                TweenLite.to(item, 0.3, {opacity: 0.8, scale: 0.5, left: x, top: y});
            
             })
         } else {
@@ -281,6 +284,7 @@ function dragElement(elmnt) {
             let ty = t.y + t.height/2 + "px";
             selected.forEach(function(item){
                 TweenLite.to(item, 0, {scale: 0.01});
+                item.style.transformOrigin = "0 0";
             })
             selected.forEach(function(item){
                 TweenLite.to(item, 0.3, {top: ty, left: tx});
@@ -289,21 +293,17 @@ function dragElement(elmnt) {
                 selected.forEach(function(item){
                     deleteItem(item);
                 })
-            }, 300)
-            
+            }, 300) 
         } else if(selected.length > 1){
             let array = Array.prototype.slice.call(selected, 0);
-            console.log(array)
             let sorted = sortByPlace(array);
             sorted.forEach(function(item, index){
                 snapToPlace(item, index*0.035);
             })
         } else if (swapTarget) {
-     
             swapPlaces(elmnt, swapTarget);
             swapTarget = null;
         } else {
-    
             snapToPlace(elmnt, 0);
         }
         qsa('.ready-swap').forEach(function(x){
@@ -349,7 +349,6 @@ addbutton.onclick = function(e){
         return Number(el.id.substring(5));
     })
     let itemId = firstMissingNumber(itemIds);
-    console.log(itemId);
     var x = document.createElement("DIV"); 
     x.classList.add("item");
     if(itemId == null){
@@ -375,12 +374,10 @@ function initItem(item){
     let x = null;
     pholders.forEach(function(p){
         if(p.id.substring(3) === item.id.substring(5)){
-            console.log(p.id)
             x = p;
         }
     })
     if(!x){
-        console.log("new placeholder");
         x = document.createElement("DIV");  
         x.id = "ph-"+(items.length-1);
         x.classList.add("placeholder");

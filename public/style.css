@@ -96,6 +96,10 @@ html, body {
   color: #ddd;
 }
 
+.container .row .item.deleting {
+  transform-origin: 0 0;
+}
+
 .container .row .item.selected {
   z-index: 200;
   color: #8c4cff;

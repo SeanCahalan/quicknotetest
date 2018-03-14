@@ -79,7 +79,10 @@ html, body{
             justify-content: center;
             width: 120px;
             height: 200px;
-            // transform-origin: 0 0;
+            &.deleting{
+                transform-origin: 0 0;
+            }
+            
             background: white;
             filter: drop-shadow(0 6px 6px #dddefb);
             transition: color ease .3s, border ease .3s, background ease .3s, transform ease .3s;
