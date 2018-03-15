@@ -363,6 +363,24 @@ addbutton.onclick = function(e){
     document.getElementsByClassName("row")[0].appendChild(x);
 }
 
+const reOrder = qs('.re-order');
+reOrder.onclick = function(e){
+    Object.keys(itemContext).forEach(function(itemId, index){
+        if(Number(itemId.substring(5)) !== index){
+            qs("#"+itemId).id = "item-"+index;
+            Object.defineProperty(itemContext, "item-"+index,
+                Object.getOwnPropertyDescriptor(itemContext, itemId));
+            delete itemContext[itemId];
+        }
+    })
+    let pholders = qsa('.placeholder');
+    Object.keys(itemContext).forEach(function(itemId, index){
+        itemContext[itemId] = pholders[index];
+        snapToPlace(qs("#"+itemId), 0);
+    })
+  
+}
+
 function initItem(item){
     let items = qsa(".item");
     let pholders = qsa('.placeholder');
