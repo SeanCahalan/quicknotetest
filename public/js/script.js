@@ -215,24 +215,32 @@ function dragElement(elmnt) {
         })
         if(selected.length === 1){
             let items = qsa('.item');
-            let closest = itemContext[ elmnt ];
+            let pholders = qsa('.placeholder');
+            let closestPlace = itemContext[ elmnt ];
             let elRect = elmnt.getBoundingClientRect();
             let p1 = [elRect.x + elRect.width/2, elRect.y+elRect.height/2];
             let d = 10000;
-            for(let i = 0; i<items.length; i++){
-                let rect = itemContext[items[i].id].getBoundingClientRect();
+            for(let i = 0; i<pholders.length; i++){
+                let rect = pholders[i].getBoundingClientRect();
                 let p2 = [rect.x + rect.width/2, rect.y+rect.height/2];
                 if(d > distance(p1, p2)){
                     d = distance(p1, p2)
-                    closest = itemContext[items[i].id];
-                    closestElement = items[i];
+                    closestPlace = pholders[i];
                 }
             }
-            
-            if(closest !== itemContext[elmnt.id]){
-                let ceRect = closestElement.getBoundingClientRect();
+
+            let closestElement = qs("#" +
+                Object.keys(itemContext).filter((itemId) =>
+                    itemContext[itemId] === closestPlace
+                )[0]
+            );
+              
+            if(closestPlace !== itemContext[elmnt.id]){
+                let ceRect = null;
+                if(closestElement)
+                    ceRect = closestElement.getBoundingClientRect();
                
-                if(insideRect(ceRect, elRect)){
+                if(ceRect && insideRect(ceRect, elRect)){
                     swapTarget = closestElement;
                     qsa('.ready-swap').forEach(function(x){
                         x.classList.remove('ready-swap');
@@ -243,6 +251,11 @@ function dragElement(elmnt) {
                         x.classList.remove('ready-swap');
                     })
                     swapTarget = null;
+                    if(insideRect(closestPlace.getBoundingClientRect(), elRect)){
+                        swapTarget = closestPlace;
+                    } else {
+                        swapTarget = null;
+                    }
                 }   
             } else {
                 swapTarget = null;
@@ -301,7 +314,11 @@ function dragElement(elmnt) {
                 snapToPlace(item, index*0.035);
             })
         } else if (swapTarget) {
-            swapPlaces(elmnt, swapTarget);
+            if(swapTarget.classList.contains('placeholder')){
+                snapToNewPlace(elmnt, swapTarget);
+            } else {
+                swapPlaces(elmnt, swapTarget);
+            }
             swapTarget = null;
         } else {
             snapToPlace(elmnt, 0);
@@ -341,6 +358,17 @@ function swapPlaces(item, target){
     // itemContext[target.id] = itemPlace;
 }
 
+function snapToNewPlace(item, target){
+    let wx = window.scrollX;
+    let wy = window.scrollY;
+
+    let tRect = target.getBoundingClientRect();
+    TweenLite.to(item, .4, {top:wy+ tRect.y+"px", left:wx +tRect.x+"px"});
+    delete(itemContext[item.id]);
+    item.id = "item-" + target.id.substring(3);
+    itemContext[item.id] = target;
+}
+
 const addbutton = document.querySelector(".add-button");
 addbutton.onclick = function(e){
     let items = document.querySelectorAll(".item");
@@ -378,7 +406,11 @@ reOrder.onclick = function(e){
         itemContext[itemId] = pholders[index];
         snapToPlace(qs("#"+itemId), 0);
     })
-  
+    let itemlen = qsa('.item').length;
+    let phlen = qsa('.placeholder').length;
+    for(let i=itemlen; i < phlen; i++){
+        qs('.row').removeChild(pholders[i]);
+    }
 }
 
 function initItem(item){
@@ -431,8 +463,7 @@ var observer = new MutationObserver(function(mutations) {
                     if(node.classList.contains("item")){
                         initItem(node);
                     } 
-                }
-                
+                } 
             }
         }
 
