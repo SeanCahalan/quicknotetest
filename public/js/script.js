@@ -177,10 +177,14 @@ function dragElement(elmnt) {
         // get the mouse cursor position at startup:
         pos3 = e.clientX;
         pos4 = e.clientY;
-
+        // if(){
+            
+        // }
         document.onmousemove = elementDrag;
        
         document.onmouseup = closeDragElement;
+
+
     }
 
     function elementDrag(e) {
@@ -393,18 +397,36 @@ addbutton.onclick = function(e){
 
 const reOrder = qs('.re-order');
 reOrder.onclick = function(e){
-    Object.keys(itemContext).forEach(function(itemId, index){
-        if(Number(itemId.substring(5)) !== index){
-            qs("#"+itemId).id = "item-"+index;
+    let items = qsa('.item');
+    let array = Array.prototype.slice.call(items, 0);
+    sorted = sortByPlace(array);
+    // Object.keys(itemContext).sort().forEach(function(itemId, index){
+    //     if(Number(itemId.substring(5)) !== index){
+    //         console.log(itemId, index);
+    //         qs("#"+itemId).id = "item-"+index;
+    //         Object.defineProperty(itemContext, "item-"+index,
+    //             Object.getOwnPropertyDescriptor(itemContext, itemId));
+    //         delete itemContext[itemId];
+    //     }
+    // })
+    // let pholders = qsa('.placeholder');
+    // Object.keys(itemContext).sort().forEach(function(itemId, index){
+    //     itemContext[itemId] = pholders[index];
+    //     snapToPlace(qs("#"+itemId), 0);
+    // })
+    sorted.forEach(function(item, index){
+        if(Number(item.id.substring(5)) !== index){
+            console.log(item.id, index);
             Object.defineProperty(itemContext, "item-"+index,
-                Object.getOwnPropertyDescriptor(itemContext, itemId));
-            delete itemContext[itemId];
+                Object.getOwnPropertyDescriptor(itemContext, item.id));
+            delete itemContext[item.id];
+            item.id = "item-"+index;
         }
     })
     let pholders = qsa('.placeholder');
-    Object.keys(itemContext).forEach(function(itemId, index){
-        itemContext[itemId] = pholders[index];
-        snapToPlace(qs("#"+itemId), 0);
+    sorted.forEach(function(item, index){
+        itemContext[item.id] = pholders[index];
+        snapToPlace(item, 0);
     })
     let itemlen = qsa('.item').length;
     let phlen = qsa('.placeholder').length;
