@@ -150,6 +150,9 @@ container.addEventListener("mouseup", function(e){
     }
 });
 
+function phIndex(elmnt){
+    return Number(itemContext[elmnt.id].id.substring(3));
+}
 
 let trash = qs(".trash");
 function showTrash(){
@@ -167,23 +170,83 @@ function hideTrash(){
 }
 
 function dragElement(elmnt) {
+
     var swapTarget = null;
     var deleteSelected = false;
     var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     elmnt.onmousedown = dragMouseDown;
+    const wi = elmnt.getBoundingClientRect().width;
     function dragMouseDown(e) {
         e = e || window.event;
        
         // get the mouse cursor position at startup:
+        box = elmnt.getBoundingClientRect();
         pos3 = e.clientX;
         pos4 = e.clientY;
-        // if(){
+        if(box.left + 10 > e.pageX || box.right - 10 < e.pageX){
+            document.onmousemove = elementResize;
+            elmnt.classList.add("resize");
+        } else {
+            elmnt.classList.remove("resize");
             
-        // }
-        document.onmousemove = elementDrag;
+            document.onmousemove = elementDrag;
+        }
+        
        
         document.onmouseup = closeDragElement;
+    }
 
+    function elementResize(e) {
+        let adjacentFree = false;
+
+        let pholders = qsa('.placeholder');
+        let items = qsa('.item');
+        let array = Array.prototype.slice.call(items, 0);
+        console.log(array)
+        sorted = sortByPlace(array);
+        let pRect = pholders[phIndex(elmnt) + 1].getBoundingClientRect();
+        if(phIndex(sorted[sorted.indexOf(elmnt)+1]) !== phIndex(elmnt) + 1){
+            if(pRect.right - e.pageX < 100){
+                console.log(pholders[phIndex(elmnt)+1])
+                adjacentFree = true;
+            }
+        } 
+
+        if(adjacentFree){
+            box = elmnt.getBoundingClientRect();
+            
+           // document.onmouseup = reOrderResize;
+            let width = pRect.right - box.left + "px";
+            TweenLite.to(elmnt, .3, {width: width})
+
+            document.onmouseup = reOrderResize;
+        
+
+            let pholders = qsa('.placeholder');
+            let items = qsa('.item');
+            let array = Array.prototype.slice.call(items, 0);
+            sorted = sortByPlace(array);
+
+            pRect = pholders[phIndex(elmnt) + 1].getBoundingClientRect();
+            pholders[phIndex(elmnt)].style.width = width;      
+
+            pholders = qsa('.placeholder');
+    
+            for(let i = sorted.length-1; i > phIndex(elmnt); i--){
+                let currentPH = itemContext[sorted[i].id];
+                let newPH = pholders[Array.prototype.indexOf.call(pholders, currentPH) - 1];
+                delete(itemContext[sorted[i].id]);
+                sorted[i].id = 'item-' + newPH.id.substring(3);
+                itemContext[sorted[i].id] = newPH;
+            }
+
+            qs('.row').removeChild(pholders[pholders.length - 1]); 
+        }   
+    }
+
+    function reOrderResize(e){
+        document.onmouseup = null;
+        document.onmousemove = null;
 
     }
 
@@ -289,6 +352,7 @@ function dragElement(elmnt) {
 
     function closeDragElement(e){
         hideTrash();
+        elmnt.classList.remove("resize");
         /* stop moving when mouse button is released:*/
         document.onmouseup = null;
         document.onmousemove = null;
@@ -400,20 +464,6 @@ reOrder.onclick = function(e){
     let items = qsa('.item');
     let array = Array.prototype.slice.call(items, 0);
     sorted = sortByPlace(array);
-    // Object.keys(itemContext).sort().forEach(function(itemId, index){
-    //     if(Number(itemId.substring(5)) !== index){
-    //         console.log(itemId, index);
-    //         qs("#"+itemId).id = "item-"+index;
-    //         Object.defineProperty(itemContext, "item-"+index,
-    //             Object.getOwnPropertyDescriptor(itemContext, itemId));
-    //         delete itemContext[itemId];
-    //     }
-    // })
-    // let pholders = qsa('.placeholder');
-    // Object.keys(itemContext).sort().forEach(function(itemId, index){
-    //     itemContext[itemId] = pholders[index];
-    //     snapToPlace(qs("#"+itemId), 0);
-    // })
     sorted.forEach(function(item, index){
         if(Number(item.id.substring(5)) !== index){
             console.log(item.id, index);

@@ -94,6 +94,7 @@ html, body {
   border-radius: 15px;
   font-weight: bold;
   color: #ddd;
+  cursor: auto;
 }
 
 .container .row .item.deleting {
@@ -107,8 +108,34 @@ html, body {
   background: #f7e3ff;
 }
 
+.container .row .item.selected:before {
+  position: absolute;
+  width: 10px;
+  height: 100%;
+  content: "";
+  left: 0;
+  top: 0;
+}
+
+.container .row .item.selected:after {
+  position: absolute;
+  width: 10px;
+  height: 100%;
+  content: "";
+  right: 0;
+  top: 0;
+}
+
 .container .row .item.selected:hover {
   cursor: move;
+}
+
+.container .row .item.selected:hover:before {
+  cursor: ew-resize;
+}
+
+.container .row .item.selected:hover:after {
+  cursor: ew-resize;
 }
 
 .container .row .item.ready-swap {

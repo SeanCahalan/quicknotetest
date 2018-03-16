@@ -90,20 +90,48 @@ html, body{
             border-radius: 15px;
             font-weight: bold;
             color: #ddd;
+            cursor: auto;
             &.selected{
                 z-index:200;
-                &:hover{
-                    cursor: move;
-                }
+                
                 color: #8c4cff;
                 border: 4px solid #8c4cff;
                 background: #f7e3ff;
+                &.resize{
+                    
+                }
+                &:before{
+                    position: absolute;
+                    width: 10px;
+                    height: 100%;
+                    content: "";
+                    left: 0;
+                    top: 0;
+                }
+                &:after{
+                    position: absolute;
+                    width: 10px;
+                    height: 100%;
+                    content: "";
+                    right: 0;
+                    top: 0; 
+                }
+                &:hover{
+                    cursor: move;
+                    &:before{
+                        cursor: ew-resize;
+                    }
+                    &:after{
+                        cursor: ew-resize;
+                    }
+                }
             }
             &.ready-swap{
                 z-index: 199;
                 transform: rotate(3deg);
                 animation: 1s ready-swap infinite;
             }
+            
         }
     }
 }
