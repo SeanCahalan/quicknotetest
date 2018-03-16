@@ -33,3 +33,7 @@ var firstMissingNumber = function(array){
     }
     return array.length;
 }
+
+var getStyle = function(node, style){
+    return getComputedStyle(node)[style];
+}

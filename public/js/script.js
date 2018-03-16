@@ -95,9 +95,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
     let items = qsa(".item");
     for (var i = 0; i < items.length; i++) {
         items[i].id = "item-" + i;
-        items[i].addEventListener('click', function(e) { 
-            this.classList.add("selected");
-        });
         var x = document.createElement("DIV");  
         x.id = "ph-"+i;
         x.classList.add("placeholder");
@@ -202,7 +199,6 @@ function dragElement(elmnt) {
         let pholders = qsa('.placeholder');
         let items = qsa('.item');
         let array = Array.prototype.slice.call(items, 0);
-        console.log(array)
         sorted = sortByPlace(array);
         let pRect = pholders[phIndex(elmnt) + 1].getBoundingClientRect();
         if(phIndex(sorted[sorted.indexOf(elmnt)+1]) !== phIndex(elmnt) + 1){
@@ -215,24 +211,25 @@ function dragElement(elmnt) {
         if(adjacentFree){
             box = elmnt.getBoundingClientRect();
             
-           // document.onmouseup = reOrderResize;
-            let width = pRect.right - box.left + "px";
-            TweenLite.to(elmnt, .3, {width: width})
+            let width = pRect.right - box.left;
+            let innerWidth = width - 2*Number(getStyle(elmnt, "border-left-width").substring(0, 1)) + "px";
+            console.log(width);
+            TweenLite.to(elmnt, .3, {width: innerWidth})
 
             document.onmouseup = reOrderResize;
         
-
             let pholders = qsa('.placeholder');
             let items = qsa('.item');
             let array = Array.prototype.slice.call(items, 0);
             sorted = sortByPlace(array);
 
             pRect = pholders[phIndex(elmnt) + 1].getBoundingClientRect();
-            pholders[phIndex(elmnt)].style.width = width;      
+            pholders[phIndex(elmnt)].style.width = width+"px";      
 
             pholders = qsa('.placeholder');
     
-            for(let i = sorted.length-1; i > phIndex(elmnt); i--){
+            for(let i = sorted.indexOf(elmnt) + 1; i < sorted.length; i++){
+                console.log(i)
                 let currentPH = itemContext[sorted[i].id];
                 let newPH = pholders[Array.prototype.indexOf.call(pholders, currentPH) - 1];
                 delete(itemContext[sorted[i].id]);
@@ -247,7 +244,6 @@ function dragElement(elmnt) {
     function reOrderResize(e){
         document.onmouseup = null;
         document.onmousemove = null;
-
     }
 
     function elementDrag(e) {
@@ -489,10 +485,6 @@ function initItem(item){
     let items = qsa(".item");
     let pholders = qsa('.placeholder');
 
-    item.addEventListener('click', function(e) {
-        this.classList.add("selected");
-    });
-
     let x = null;
     pholders.forEach(function(p){
         if(p.id.substring(3) === item.id.substring(5)){
@@ -512,7 +504,6 @@ function initItem(item){
 
     dragElement(item);
     itemContext[item.id] = x;
-    
 }
 
 function deleteItem(item){
@@ -520,11 +511,9 @@ function deleteItem(item){
     qs('.row').removeChild(item);
 }
 
-
 var target = document.querySelector('.container');
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
-    
         if(mutation.type === "childList"){
             let target = mutation.target
             if(target.className === "row"){
@@ -538,7 +527,6 @@ var observer = new MutationObserver(function(mutations) {
                 } 
             }
         }
-
     });    
 });
 

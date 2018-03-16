@@ -140,7 +140,7 @@ html, body {
 
 .container .row .item.ready-swap {
   z-index: 199;
-  transform: rotate(3deg);
+  transform: rotate(3deg) !important;
   animation: 1s ready-swap infinite;
 }
 
