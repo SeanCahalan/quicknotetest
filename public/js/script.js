@@ -181,7 +181,10 @@ function dragElement(elmnt) {
         pos3 = e.clientX;
         pos4 = e.clientY;
         if(box.left + 10 > e.pageX || box.right - 10 < e.pageX){
-            document.onmousemove = elementResize;
+            let rightExpand = (e.pageX > box.right - 10);
+            document.onmousemove = function(e) {
+                elementResize(e, rightExpand, box.width);
+            }
             elmnt.classList.add("resize");
         } else {
             elmnt.classList.remove("resize");
@@ -193,57 +196,102 @@ function dragElement(elmnt) {
         document.onmouseup = closeDragElement;
     }
 
-    function elementResize(e) {
-        let adjacentFree = false;
-
+    function elementResize(e, rightExpand, Wo) {  
+        let box = elmnt.getBoundingClientRect();
         let pholders = qsa('.placeholder');
-        let items = qsa('.item');
-        let array = Array.prototype.slice.call(items, 0);
-        sorted = sortByPlace(array);
-        let pRect = pholders[phIndex(elmnt) + 1].getBoundingClientRect();
-        if(phIndex(sorted[sorted.indexOf(elmnt)+1]) !== phIndex(elmnt) + 1){
-            if(pRect.right - e.pageX < 100){
-                console.log(pholders[phIndex(elmnt)+1])
-                adjacentFree = true;
+
+        let openPholders = Array.prototype.slice.call(pholders, 0).filter((ph, i) =>
+            !qs('#item-'+i)
+        );
+
+        let adjacent = [pholders[phIndex(elmnt)]];
+        if(rightExpand){
+            for(let i = 0, id=phIndex(elmnt); i < openPholders.length; i++){
+                let phId = Number(openPholders[i].id.substring(3));
+                if(phId - id == 1){
+                    id = phId;
+                    adjacent.push(openPholders[i]);
+                }
             }
-        } 
+        } else {
+            for(let i = openPholders.length-1, id=phIndex(elmnt); i >= 0; i--){
+                let phId = Number(openPholders[i].id.substring(3));
+                if(id - phId == 1){
+                    id = phId;
+                    adjacent.push(openPholders[i]);
+                }
+            }
+        }
 
-        if(adjacentFree){
-            box = elmnt.getBoundingClientRect();
-            
-            let width = pRect.right - box.left;
-            let innerWidth = width - 2*Number(getStyle(elmnt, "border-left-width").substring(0, 1)) + "px";
-            console.log(width);
-            TweenLite.to(elmnt, .3, {width: innerWidth})
-
-            document.onmouseup = reOrderResize;
+        let edge = (rightExpand) ? box.left : box.right;
+        for(let i = 0; i < adjacent.length; i++){
+            let pRect = adjacent[i].getBoundingClientRect();
+            let pEdge = (rightExpand) ? pRect.right : pRect.left;
+            if(Math.abs( e.pageX - pEdge ) < 100){
+                elmnt.style.width = "auto";
+                if(rightExpand){
+                    TweenLite.to(elmnt, .3, {"right": window.innerWidth - pEdge})
+                } else {
+                    elmnt.style.right =  window.innerWidth - box.right + "px";
+                    TweenLite.to(elmnt, .3, {"left": pEdge})
+                }
+                
+            }
+        }
         
-            let pholders = qsa('.placeholder');
-            let items = qsa('.item');
-            let array = Array.prototype.slice.call(items, 0);
-            sorted = sortByPlace(array);
+        document.onmouseup = reOrderResize;
 
-            pRect = pholders[phIndex(elmnt) + 1].getBoundingClientRect();
-            pholders[phIndex(elmnt)].style.width = width+"px";      
 
-            pholders = qsa('.placeholder');
+     
+
+        
+
+        // if(phIndex(sorted[sorted.indexOf(elmnt)+1]) !== phIndex(elmnt) + 1){
+        //     if(pRect.right - e.pageX < 100){
+        //         console.log(pholders[phIndex(elmnt)+1])
+        //         rightFree = true;
+        //     }
+        // } 
+
+        // if(rightFree){
+            
+        //     let width = pRect.right - box.left;
+        //     let innerWidth = width - 2*Number(getStyle(elmnt, "border-left-width").substring(0, 1)) + "px";
+        //     console.log(width);
+        //     TweenLite.to(elmnt, .3, {width: innerWidth})
+
+        //     document.onmouseup = reOrderResize;
+        
+        //     let pholders = qsa('.placeholder');
+        //     let items = qsa('.item');
+        //     let array = Array.prototype.slice.call(items, 0);
+        //     sorted = sortByPlace(array);
+
+        //     pRect = pholders[phIndex(elmnt) + 1].getBoundingClientRect();
+        //     pholders[phIndex(elmnt)].style.width = width+"px";      
+
+        //     pholders = qsa('.placeholder');
     
-            for(let i = sorted.indexOf(elmnt) + 1; i < sorted.length; i++){
-                console.log(i)
-                let currentPH = itemContext[sorted[i].id];
-                let newPH = pholders[Array.prototype.indexOf.call(pholders, currentPH) - 1];
-                delete(itemContext[sorted[i].id]);
-                sorted[i].id = 'item-' + newPH.id.substring(3);
-                itemContext[sorted[i].id] = newPH;
-            }
+        //     for(let i = sorted.indexOf(elmnt) + 1; i < sorted.length; i++){
+        //         console.log(i)
+        //         let currentPH = itemContext[sorted[i].id];
+        //         let newPH = pholders[Array.prototype.indexOf.call(pholders, currentPH) - 1];
+        //         delete(itemContext[sorted[i].id]);
+        //         sorted[i].id = 'item-' + newPH.id.substring(3);
+        //         itemContext[sorted[i].id] = newPH;
+        //     }
 
-            qs('.row').removeChild(pholders[pholders.length - 1]); 
-        }   
+        //     qs('.row').removeChild(pholders[pholders.length - 1]); 
+        // }   
     }
 
     function reOrderResize(e){
         document.onmouseup = null;
         document.onmousemove = null;
+        let outerWidth = elmnt.getBoundingClientRect().width;
+
+        elmnt.style.width = outerWidth - 2*Number(getStyle(elmnt, "border-top-width").substring(0, 1)) + "px";
+        elmnt.style.right = "";
     }
 
     function elementDrag(e) {
