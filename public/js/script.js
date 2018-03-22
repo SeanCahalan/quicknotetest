@@ -240,49 +240,6 @@ function dragElement(elmnt) {
         }
         
         document.onmouseup = reOrderResize;
-
-
-     
-
-        
-
-        // if(phIndex(sorted[sorted.indexOf(elmnt)+1]) !== phIndex(elmnt) + 1){
-        //     if(pRect.right - e.pageX < 100){
-        //         console.log(pholders[phIndex(elmnt)+1])
-        //         rightFree = true;
-        //     }
-        // } 
-
-        // if(rightFree){
-            
-        //     let width = pRect.right - box.left;
-        //     let innerWidth = width - 2*Number(getStyle(elmnt, "border-left-width").substring(0, 1)) + "px";
-        //     console.log(width);
-        //     TweenLite.to(elmnt, .3, {width: innerWidth})
-
-        //     document.onmouseup = reOrderResize;
-        
-        //     let pholders = qsa('.placeholder');
-        //     let items = qsa('.item');
-        //     let array = Array.prototype.slice.call(items, 0);
-        //     sorted = sortByPlace(array);
-
-        //     pRect = pholders[phIndex(elmnt) + 1].getBoundingClientRect();
-        //     pholders[phIndex(elmnt)].style.width = width+"px";      
-
-        //     pholders = qsa('.placeholder');
-    
-        //     for(let i = sorted.indexOf(elmnt) + 1; i < sorted.length; i++){
-        //         console.log(i)
-        //         let currentPH = itemContext[sorted[i].id];
-        //         let newPH = pholders[Array.prototype.indexOf.call(pholders, currentPH) - 1];
-        //         delete(itemContext[sorted[i].id]);
-        //         sorted[i].id = 'item-' + newPH.id.substring(3);
-        //         itemContext[sorted[i].id] = newPH;
-        //     }
-
-        //     qs('.row').removeChild(pholders[pholders.length - 1]); 
-        // }   
     }
 
     function reOrderResize(e){
@@ -292,6 +249,32 @@ function dragElement(elmnt) {
 
         elmnt.style.width = outerWidth - 2*Number(getStyle(elmnt, "border-top-width").substring(0, 1)) + "px";
         elmnt.style.right = "";
+
+        let pholders = Array.prototype.slice.call(qsa('.placeholder'), 0);
+        let overlap = pholders.filter(ph => 
+            insideRect(ph.getBoundingClientRect(), elmnt.getBoundingClientRect())
+        );
+        let firstPh = overlap[0];
+        let lastPh = overlap[overlap.length -1 ];
+        let displacement = Math.abs(pholders.indexOf(firstPh) - pholders.indexOf(lastPh));
+        firstPh.style.width = outerWidth + "px";
+     
+        for(let i = pholders.length-1; i >= pholders.length - displacement; i--){
+            console.log("remove");
+            qs('.row').removeChild(pholders[i]);
+        }
+
+        pholders = Array.prototype.slice.call(qsa('.placeholder'), 0);
+        let items = qsa('.item');
+
+        for(let i = 0; i < items.length; i++){
+            let ph = pholders.filter(ph => 
+                insideRect(ph.getBoundingClientRect(), items[i].getBoundingClientRect())
+            )[0];
+            delete(itemContext[items[i].id]);
+            items[i].id = "item-" + ph.id.substring(3);
+            itemContext[items[i].id] = ph;    
+        }   
     }
 
     function elementDrag(e) {
