@@ -12,6 +12,10 @@ var distance = function(p1, p2){
     return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
 }
 
+var nodeArray = function(nodeList){
+    return Array.prototype.slice.call(nodeList, 0);
+}
+
 var sortByPlace = function(array){
     return array.sort(function(a, b){
         let x = Number(itemContext[a.id].id.substring(3));
@@ -36,4 +40,11 @@ var firstMissingNumber = function(array){
 
 var getStyle = function(node, style){
     return getComputedStyle(node)[style];
+}
+
+var insideRect = function(item, box){
+    return !(item.right < box.left || 
+                item.left > box.right || 
+                item.bottom < box.top || 
+                item.top > box.bottom)
 }

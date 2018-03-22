@@ -1,6 +1,59 @@
+// dictionary: key = item.id, val = placeholder
 var itemContext = new Object();
 
-const container = document.getElementsByClassName("container")[0];
+// init for any items already in the DOM on load
+document.addEventListener("DOMContentLoaded", function(event) { 
+    let items = qsa(".item");
+    for (var i = 0; i < items.length; i++) {
+        items[i].id = "item-" + i;
+        var ph = document.createElement("DIV");  
+        ph.id = "ph-"+i;
+        ph.classList.add("placeholder");
+        qs(".row").appendChild(ph);
+        dragElement(items[i]);
+    }
+    let pholders = qsa('.placeholder');
+    let wx = window.scrollX;
+    let wy = window.scrollY;
+    setTimeout(function(){
+        for (var i = 0; i < items.length; i++) {
+            let rect = pholders[i].getBoundingClientRect();
+            items[i].style.top = wy + rect.y + "px";
+            items[i].style.left = wx + rect.x + "px";
+            itemContext[items[i].id] = pholders[i];
+        }
+    }, 100);
+});
+
+// re-align items on window resize
+window.addEventListener('resize', function(){
+    let wx = window.scrollX;
+    let wy = window.scrollY;
+    let items = qsa(".item");
+    for (var i = 0; i < items.length; i++) {
+        let rect = itemContext[items[i].id].getBoundingClientRect();
+        items[i].style.top = wy + rect.y + "px";
+        items[i].style.left = wx + rect.x + "px";
+    }
+}, true);
+
+const container = qs(".container");
+// listen for mousedown to disable the document mousemove if the
+// event target is an item
+container.addEventListener("mousedown", function(e){
+    container.onmousemove = function(e) {
+        mouseMoveFunction(e, Xo, Yo);
+    }
+    if ($(event.target).closest('.item').length) {  
+        container.onmousemove = null;
+    } 
+    let Xo = e.pageX;
+    let Yo = e.pageY;  
+    mouseDownFunction(e, Xo, Yo); 
+});
+
+// document mousedown
+// handle shift/ctrl select and add selection div to the dom
 function mouseDownFunction(e, Xo, Yo){
     let items = qsa(".item");
     if(!e.target.classList.contains("selected")){
@@ -10,8 +63,7 @@ function mouseDownFunction(e, Xo, Yo){
             }
         }
         if(e.shiftKey){
-            let array = Array.prototype.slice.call(items, 0);
-            let sorted = sortByPlace(array);
+            let sorted = sortByPlace(nodeArray(items));
             let end = sorted.indexOf(e.target);
             let start = 0;
             for (var i = 0; i < end; i++) {
@@ -27,21 +79,14 @@ function mouseDownFunction(e, Xo, Yo){
     if(e.target.classList.contains('item')){
         e.target.classList.add("selected");
     } 
-    
-
     var x = document.createElement("DIV");  
     x.id = "select";
     container.appendChild(x);
     TweenLite.to(x, 1, {opacity: 1})
 }
 
-function insideRect(item, box){
-    return !(item.right < box.left || 
-                item.left > box.right || 
-                item.bottom < box.top || 
-                item.top > box.bottom)
-}
-function overlap(item){
+// check if an item overlaps with the selection box
+function selected(item){
     var domRect = item.getBoundingClientRect();
     var select = document.getElementById("select");
     var selRect = select.getBoundingClientRect();
@@ -50,10 +95,12 @@ function overlap(item){
     }
     return false;
 }
+
+// add the selected class to items that are overlapped by selection
 function select(e){
     let items = qsa(".item");
     for(let i = 0, len = items.length; i < len; i++){
-        if(overlap(items[i])){
+        if(selected(items[i])){
             items[i].classList.add("selected"); 
         } else {
             if(!e.ctrlKey){
@@ -63,6 +110,8 @@ function select(e){
     }
 }
 
+// document mousemove
+// manipulate the selection box, check if items are selected
 function mouseMoveFunction(e, Xo, Yo){
     let containerW = container.offsetWidth;
     let containerH = container.offsetHeight;
@@ -91,53 +140,8 @@ function mouseMoveFunction(e, Xo, Yo){
     }
 }
 
-document.addEventListener("DOMContentLoaded", function(event) { 
-    let items = qsa(".item");
-    for (var i = 0; i < items.length; i++) {
-        items[i].id = "item-" + i;
-        var x = document.createElement("DIV");  
-        x.id = "ph-"+i;
-        x.classList.add("placeholder");
-        qs(".row").appendChild(x);
-        dragElement(items[i]);
-    }
-    let pholders = qsa('.placeholder');
-    let wx = window.scrollX;
-    let wy = window.scrollY;
-    setTimeout(function(){
-        for (var i = 0; i < items.length; i++) {
-            let rect = pholders[i].getBoundingClientRect();
-            items[i].style.top = wy + rect.y + "px";
-            items[i].style.left = wx + rect.x + "px";
-            itemContext[items[i].id] = pholders[i];
-        }
-    }, 100);
-    
-});
-
-window.addEventListener('resize', function(){
-    let wx = window.scrollX;
-    let wy = window.scrollY;
-    let items = qsa(".item");
-    for (var i = 0; i < items.length; i++) {
-        let rect = itemContext[items[i].id].getBoundingClientRect();
-        items[i].style.top = wy + rect.y + "px";
-        items[i].style.left = wx + rect.x + "px";
-    }
-}, true);
-
-container.addEventListener("mousedown", function(e){
-    container.onmousemove = function(e) {
-        mouseMoveFunction(e, Xo, Yo);
-    }
-    if ($(event.target).closest('.item').length) {  
-        container.onmousemove = null;
-    } 
-    let Xo = e.pageX;
-    let Yo = e.pageY;  
-    mouseDownFunction(e, Xo, Yo); 
-});
-
+// document mouseup listener
+// disable the mousemove and remove the selection div from the dom
 container.addEventListener("mouseup", function(e){
     container.onmousemove = null;
     let child = qs('#select');
@@ -147,11 +151,13 @@ container.addEventListener("mouseup", function(e){
     }
 });
 
+// return the placeholder index of an element
 function phIndex(elmnt){
     return Number(itemContext[elmnt.id].id.substring(3));
 }
 
 let trash = qs(".trash");
+// make the trash icon visible
 function showTrash(){
     if(!trash.classList.contains('active')){
         trash.classList.add('active');
@@ -159,6 +165,8 @@ function showTrash(){
         TweenLite.to(trash, 1, {opacity: 1})
     }  
 }
+
+// hide the trash icon
 function hideTrash(){
     TweenLite.to(trash, 1, {opacity: 0})
     setTimeout(function(){
@@ -166,63 +174,57 @@ function hideTrash(){
     },1000)   
 }
 
+// item drag function with enclosed mouse event functions
+// handles the dragging and resizing of items
 function dragElement(elmnt) {
-
     var swapTarget = null;
     var deleteSelected = false;
     var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     elmnt.onmousedown = dragMouseDown;
-    const wi = elmnt.getBoundingClientRect().width;
+
+    // item onmousedown
+    // if corners clicked: onmousemove = resizeItem
+    // else: onmousemove = dragItem
     function dragMouseDown(e) {
         e = e || window.event;
-       
         // get the mouse cursor position at startup:
         box = elmnt.getBoundingClientRect();
         pos3 = e.clientX;
         pos4 = e.clientY;
         if(box.left + 10 > e.pageX || box.right - 10 < e.pageX){
             let rightExpand = (e.pageX > box.right - 10);
+            console.log(rightExpand);
             document.onmousemove = function(e) {
-                elementResize(e, rightExpand, box.width);
+                resizeItem(e, rightExpand, box.width);
             }
             elmnt.classList.add("resize");
         } else {
             elmnt.classList.remove("resize");
-            
-            document.onmousemove = elementDrag;
+            document.onmousemove = dragItem;
         }
-        
-       
         document.onmouseup = closeDragElement;
     }
 
-    function elementResize(e, rightExpand, Wo) {  
+    // item onmousemove
+    // grow or shrink item in the right or left direction
+    function resizeItem(e, rightExpand, Wo) {  
         let box = elmnt.getBoundingClientRect();
         let pholders = qsa('.placeholder');
-
-        let openPholders = Array.prototype.slice.call(pholders, 0).filter((ph, i) =>
-            !qs('#item-'+i)
-        );
-
+        let openPholders = nodeArray(pholders).filter((ph, i) => !qs('#item-'+i));
+    
         let adjacent = [pholders[phIndex(elmnt)]];
-        if(rightExpand){
-            for(let i = 0, id=phIndex(elmnt); i < openPholders.length; i++){
-                let phId = Number(openPholders[i].id.substring(3));
-                if(phId - id == 1){
-                    id = phId;
-                    adjacent.push(openPholders[i]);
-                }
-            }
-        } else {
-            for(let i = openPholders.length-1, id=phIndex(elmnt); i >= 0; i--){
-                let phId = Number(openPholders[i].id.substring(3));
-                if(id - phId == 1){
-                    id = phId;
-                    adjacent.push(openPholders[i]);
-                }
+        let i = (rightExpand) ? 0 : openPholders.length - 1;
+        let id = phIndex(elmnt);
+        // get the adjacent open placeholders
+        for(i; (rightExpand) ? (i < openPholders.length) : (i >= 0); (rightExpand) ? (i++) : (i--)){
+            let phId = Number(openPholders[i].id.substring(3));
+            if((rightExpand) ? (phId - id) : (id - phId) == 1){
+                id = phId;
+                adjacent.push(openPholders[i]);
             }
         }
-
+        console.log(adjacent)
+        // snap item to the appropriate edge if within threshold
         let edge = (rightExpand) ? box.left : box.right;
         for(let i = 0; i < adjacent.length; i++){
             let pRect = adjacent[i].getBoundingClientRect();
@@ -234,11 +236,9 @@ function dragElement(elmnt) {
                 } else {
                     elmnt.style.right =  window.innerWidth - box.right + "px";
                     TweenLite.to(elmnt, .3, {"left": pEdge})
-                }
-                
+                }  
             }
         }
-        
         document.onmouseup = reOrderResize;
     }
 
@@ -250,7 +250,7 @@ function dragElement(elmnt) {
         elmnt.style.width = outerWidth - 2*Number(getStyle(elmnt, "border-top-width").substring(0, 1)) + "px";
         elmnt.style.right = "";
 
-        let pholders = Array.prototype.slice.call(qsa('.placeholder'), 0);
+        let pholders = nodeArray(qsa('.placeholder'), 0);
         let overlap = pholders.filter(ph => 
             insideRect(ph.getBoundingClientRect(), elmnt.getBoundingClientRect())
         );
@@ -277,7 +277,7 @@ function dragElement(elmnt) {
         }   
     }
 
-    function elementDrag(e) {
+    function dragItem(e) {
         let selected = qsa(".selected");
         let array = Array.prototype.slice.call(selected, 0);
         let sorted = sortByPlace(array);
