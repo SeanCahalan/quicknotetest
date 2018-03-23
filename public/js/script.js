@@ -223,7 +223,6 @@ function dragElement(elmnt) {
                 adjacent.push(openPholders[i]);
             }
         }
-        console.log(adjacent)
         // snap item to the appropriate edge if within threshold
         let edge = (rightExpand) ? box.left : box.right;
         for(let i = 0; i < adjacent.length; i++){
@@ -231,17 +230,19 @@ function dragElement(elmnt) {
             let pEdge = (rightExpand) ? pRect.right : pRect.left;
             if(Math.abs( e.pageX - pEdge ) < 100){
                 elmnt.style.width = "auto";
+                elmnt.style.right =  window.innerWidth - box.right + "px";
                 if(rightExpand){
                     TweenLite.to(elmnt, .3, {"right": window.innerWidth - pEdge})
                 } else {
-                    elmnt.style.right =  window.innerWidth - box.right + "px";
                     TweenLite.to(elmnt, .3, {"left": pEdge})
-                }  
+                }
             }
         }
         document.onmouseup = reOrderResize;
     }
 
+    // item onmouseup
+    // reassign item and placeholder ids, match ph width to resized item width
     function reOrderResize(e){
         document.onmouseup = null;
         document.onmousemove = null;
@@ -250,7 +251,7 @@ function dragElement(elmnt) {
         elmnt.style.width = outerWidth - 2*Number(getStyle(elmnt, "border-top-width").substring(0, 1)) + "px";
         elmnt.style.right = "";
 
-        let pholders = nodeArray(qsa('.placeholder'), 0);
+        let pholders = nodeArray(qsa('.placeholder'));
         let overlap = pholders.filter(ph => 
             insideRect(ph.getBoundingClientRect(), elmnt.getBoundingClientRect())
         );
@@ -258,15 +259,15 @@ function dragElement(elmnt) {
         let lastPh = overlap[overlap.length -1 ];
         let displacement = Math.abs(pholders.indexOf(firstPh) - pholders.indexOf(lastPh));
         firstPh.style.width = outerWidth + "px";
-     
-        for(let i = pholders.length-1; i >= pholders.length - displacement; i--){
-            console.log("remove");
+        for(let i = pholders.indexOf(firstPh) + 1; i <= pholders.indexOf(lastPh); i++){
             qs('.row').removeChild(pholders[i]);
         }
-
+        pholders = nodeArray(qsa('.placeholder'));
+        for(let i = pholders.indexOf(firstPh) + 1; i < pholders.length; i++){
+            pholders[i].id = "ph-" + i;
+        }
         pholders = Array.prototype.slice.call(qsa('.placeholder'), 0);
         let items = qsa('.item');
-
         for(let i = 0; i < items.length; i++){
             let ph = pholders.filter(ph => 
                 insideRect(ph.getBoundingClientRect(), items[i].getBoundingClientRect())
@@ -274,13 +275,15 @@ function dragElement(elmnt) {
             delete(itemContext[items[i].id]);
             items[i].id = "item-" + ph.id.substring(3);
             itemContext[items[i].id] = ph;    
-        }   
+        }
+        console.log(itemContext);
     }
 
+    // item onmousemove
+    // drag item to mouse
     function dragItem(e) {
         let selected = qsa(".selected");
-        let array = Array.prototype.slice.call(selected, 0);
-        let sorted = sortByPlace(array);
+        let sorted = sortByPlace(nodeArray(selected));
 
         showTrash();
         e = e || window.event;
@@ -289,21 +292,18 @@ function dragElement(elmnt) {
         pos2 = pos4 - e.clientY;
         pos3 = e.clientX;
         pos4 = e.clientY;
-
         let y = (elmnt.offsetTop - pos2) + "px";
         let x = (elmnt.offsetLeft - pos1) + "px";
         TweenLite.to(elmnt, 0, {top:y, left:x});
+        // tween the other selected items to follow the one being dragged
         const elIndex = sorted.indexOf(elmnt);
         sorted.forEach(function(sibling, index){
-            
             var interval = Math.floor(index/5)-Math.floor(elIndex/5);
             var dif = (index+5)%5-elIndex%5;
             y = (elmnt.offsetTop - pos2 + 220*interval) + "px";
             x = (elmnt.offsetLeft - pos1 + 140*dif) + "px";
             var absDif = Math.abs(dif);
-            if(index < elIndex){
-                TweenLite.to(sibling, 0.2*(1+0.3*absDif), {top:y, left:x});
-            } else if(index > elIndex){
+            if(index != elIndex){
                 TweenLite.to(sibling, 0.2*(1+0.3*absDif), {top:y, left:x});
             }
         })
