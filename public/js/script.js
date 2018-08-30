@@ -225,14 +225,15 @@ function dragElement(elmnt) {
         }
         // snap item to the appropriate edge if within threshold
         let edge = (rightExpand) ? box.left : box.right;
+        let body = qs('body').getBoundingClientRect();
         for(let i = 0; i < adjacent.length; i++){
             let pRect = adjacent[i].getBoundingClientRect();
             let pEdge = (rightExpand) ? pRect.right : pRect.left;
             if(Math.abs( e.pageX - pEdge ) < 100){
-                elmnt.style.width = "auto";
-                elmnt.style.right =  window.innerWidth - box.right + "px";
+                elmnt.style.right =  body.width - box.right + "px";
+                elmnt.style.width = "auto"; 
                 if(rightExpand){
-                    TweenLite.to(elmnt, .3, {"right": window.innerWidth - pEdge})
+                    TweenLite.to(elmnt, .3, {"right": body.width - pEdge})
                 } else {
                     TweenLite.to(elmnt, .3, {"left": pEdge})
                 }
@@ -276,7 +277,6 @@ function dragElement(elmnt) {
             items[i].id = "item-" + ph.id.substring(3);
             itemContext[items[i].id] = ph;    
         }
-        console.log(itemContext);
     }
 
     // item onmousemove
